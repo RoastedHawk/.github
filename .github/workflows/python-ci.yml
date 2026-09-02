@@ -57,8 +57,14 @@ jobs:
             ruff.txt
             black.txt
             precommit.txt
-      - name: Run tests with coverage
-        run: pytest -q --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=${{ inputs.cov-threshold }}
+      - name: Run tests with coverage (XML + JUnit)
+        run: pytest -q --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml --cov-fail-under=${{ inputs.cov-threshold }} --junitxml=pytest.xml || true
+      - name: Upload pytest report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-report-${{ matrix.python-version }}
+          path: pytest.xml
       - name: Upload coverage xml
         if: matrix.python-version == inputs.python-minor
         uses: actions/upload-artifact@v4
@@ -81,7 +87,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install mypy
       - name: Run mypy
-        run: mypy --config-file mypy.ini src
+        run: mypy --config-file mypy.ini src | tee mypy.txt; test ${PIPESTATUS[0]} -eq 0
+      - name: Upload mypy output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypy-output
+          path: mypy.txt
 
   badge:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
