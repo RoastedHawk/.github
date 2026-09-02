@@ -1,0 +1,27 @@
+name: Reusable Gitleaks
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Gitleaks
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: detect --no-banner -v --redact --report-format=json --report-path gitleaks.json
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks
+          path: gitleaks.json
+
